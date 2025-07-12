@@ -2,6 +2,9 @@ import paho.mqtt.client as mqtt
 import tempSensor
 import humiditySensor
 import distanceSensor
+from db import MongoDBClient
+
+dbManager = MongoDBClient()
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -13,13 +16,15 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-	print(msg.topic+" "+str(msg.payload))
+	if(msg.topic == "smart-heat/register-device"):		
+		print(msg.topic+" "+str(msg.payload))
 
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 
-mqttc.connect("172.20.10.2", 1883, 60)
+mqttc.connect("192.168.1.148", 1883, 60)
+
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.
