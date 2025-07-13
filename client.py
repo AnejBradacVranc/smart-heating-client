@@ -1,10 +1,27 @@
+from db import MongoDBClient
+from apscheduler.schedulers.background import BackgroundScheduler
+from firebaseManager import FirebaseManager
+
 import paho.mqtt.client as mqtt
 import tempSensor
 import humiditySensor
 import distanceSensor
-from db import MongoDBClient
+import dataProcessing
+import cronService
+import json
+
+firebase = FirebaseManager()
 
 dbManager = MongoDBClient()
+scheduler = BackgroundScheduler()
+current_distance = 0
+
+scheduler.add_job(cronService.notify_users, 'cron',[dbManager, firebase, current_distance] ,minute='*/5')
+
+print("Starting cron service")
+scheduler.start()
+
+
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -14,14 +31,22 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+	print(msg)
 	try:
 		print(msg.topic)
-		if msg.topic == "smart-heat/register-device":		
-			resp = dbManager.update("firebaseDeviceTokens",{"token": str(msg.payload)}, {"token": str(msg.payload)})			
-			if(resp == None):
+		if msg.topic == "smart-heat/register-device":	
+			payload_str = msg.payload.decode('utf-8')
+			data = json.loads(payload_str)		
+			settings_update_resp = dbManager.update_one("settings", {"fuel_critical_point": data.get("fuelCriticalPoint")}, filter_query=None, upsert=True)
+			if(settings_update_resp == None):
+				print("ERROR: Could not save fuel critical level to db")
+			else:
+				print("Added critical fuel level to db", data.get("fuelCriticalPoint"))
+			device_update_resp = dbManager.update("devices",{"token": data.get("token")}, {"token": data.get("token"), "timestamp": data.get("timestamp") })			
+			if(device_update_resp == None):
 				print("ERROR: Could not save device token to db")
 			else:
-				print("Added token to db", str(msg.payload))
+				print("Added token to db", data.get("token"))
 			print(msg.topic+" "+str(msg.payload))
 	except Exception as e:
 		print("Exception in on_message:", e)
@@ -40,6 +65,7 @@ while run:
 		humidity = humiditySensor.read_humidity()
 		roomTemp = humiditySensor.read_temp()
 		distance = distanceSensor.read_distance()
+		current_distance = distance
 		
 		#print(f"Furnace temperature: {furnaceTemp} C")
 		#print(f"Room temperature: {roomTemp} C")
@@ -49,7 +75,8 @@ while run:
 		mqttc.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=False)
 		mqttc.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=False)
 		mqttc.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=False)
-		mqttc.publish("smart-heat/distance", payload=distance, qos=1, retain=False)
+		mqttc.publish("smart-heat/distance",  payload=distance, qos=1, retain=False)
+		#na neki moment za vse trenutno registrirane device sharni trenutni fuel level
 		rc = mqttc.loop(timeout=2.0)
 
 		if rc != 0:
