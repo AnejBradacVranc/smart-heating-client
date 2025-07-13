@@ -10,13 +10,18 @@ import dataProcessing
 import cronService
 import json
 
-firebase = FirebaseManager()
+class SensorDataState:
+    current_distance = 0
+
+state = SensorDataState()
+
+firebase = FirebaseManager("/home/anejbv/certificates/smartheat-d8b87-firebase-adminsdk-fbsvc-0b545e50b8.json")
 
 dbManager = MongoDBClient()
 scheduler = BackgroundScheduler()
-current_distance = 0
+state.current_distance = 0
 
-scheduler.add_job(cronService.notify_users, 'cron',[dbManager, firebase, current_distance] ,minute='*/5')
+scheduler.add_job(cronService.notify_users, 'interval',[dbManager, firebase, state] ,minutes=10)
 
 print("Starting cron service")
 scheduler.start()
@@ -65,7 +70,7 @@ while run:
 		humidity = humiditySensor.read_humidity()
 		roomTemp = humiditySensor.read_temp()
 		distance = distanceSensor.read_distance()
-		current_distance = distance
+		state.current_distance = distance		
 		
 		#print(f"Furnace temperature: {furnaceTemp} C")
 		#print(f"Room temperature: {roomTemp} C")
