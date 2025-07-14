@@ -35,7 +35,7 @@ class MongoDBClient:
 	def find_all(self, collection_name):
 		try:
 			collection = self.db[collection_name]
-			documents = list(collection.find())
+			documents = list(collection.find({}, {'_id': 0}))
 			return documents
 		except Exception as e:
 			print("Error fetching documents:", e)
