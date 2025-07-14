@@ -1,6 +1,7 @@
 from db import MongoDBClient
 from apscheduler.schedulers.background import BackgroundScheduler
 from firebaseManager import FirebaseManager
+from flask import Flask
 
 import paho.mqtt.client as mqtt
 import tempSensor
