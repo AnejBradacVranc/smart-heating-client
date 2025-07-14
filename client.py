@@ -9,6 +9,7 @@ import distanceSensor
 import dataProcessing
 import cronService
 import json
+import time
 
 class SensorDataState:
     current_distance = 0
@@ -59,7 +60,7 @@ mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 
 mqttc.connect("192.168.1.148", 1883, 60)
-
+mqttc.loop_start()
 run = True
 while run:
 	try:
@@ -79,10 +80,7 @@ while run:
 		mqttc.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=False)
 		mqttc.publish("smart-heat/distance",  payload=distance, qos=1, retain=False)
 		#na neki moment za vse trenutno registrirane device sharni trenutni fuel level
-		rc = mqttc.loop(timeout=2.0)
-
-		if rc != 0:
-			print("Error occured")
+		time.sleep(5)
 			
 	except Exception:
 		print("Error occured with reading data")
