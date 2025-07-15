@@ -26,7 +26,7 @@ def on_message(client, userdata, msg):
     print(msg)
     try:
         print(msg.topic)
-        if msg.topic == "smart-heat/register-device":
+        '''if msg.topic == "smart-heat/register-device":
             payload_str = msg.payload.decode('utf-8')
             data = json.loads(payload_str)
 
@@ -49,7 +49,7 @@ def on_message(client, userdata, msg):
             if device_update_resp is None:
                 print("ERROR: Could not save device token to db")
             else:
-                print("Added token to db", data.get("token"))
+                print("Added token to db", data.get("token"))'''
 
             print(msg.topic + " " + str(msg.payload))
     except Exception as e:
