@@ -1,8 +1,9 @@
 from pymongo import MongoClient
 from pymongo import ReturnDocument
+import os
 
 class MongoDBClient: 
-	def __init__(self, uri="mongodb://localhost:27017/", db_name="smartHome"):
+	def __init__(self, uri="mongodb://mongo:27017/", db_name="smartHome"):
 		self.client = MongoClient(uri)
 		self.db = self.client[db_name]
 		

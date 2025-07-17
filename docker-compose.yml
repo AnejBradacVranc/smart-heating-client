@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    command: python server.py
+    ports:
+      - "8000:8000"    # expose backend API to LAN
+    privileged: true
+    depends_on:
+      - mongo
+      - mosquitto
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/smartHome
+      - MONGO_DB_NAME=smartHome
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+    volumes:
+      - .:/app
+    networks:
+      - appnet
+
+  main:
+    build: .
+    command: python main.py
+    privileged: true
+    depends_on:
+      - mongo
+      - mosquitto
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/firebase-key.json
+      - MONGO_URI=mongodb://mongo:27017/smartHome
+      - MONGO_DB_NAME=smartHome
+      - MQTT_BROKER=mosquitto
+    volumes:
+      - .:/app
+      - /home/anejbv/certificates/smartheat-d8b87-firebase-adminsdk-fbsvc-0b545e50b8.json:/secrets/firebase-key.json:ro
+    networks:
+      - appnet
+
+  mongo:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"   # expose mongo if needed, optional
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - appnet
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"     # expose MQTT broker to LAN
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - appnet
+
+volumes:
+  mongodata:
+
+networks:
+  appnet:

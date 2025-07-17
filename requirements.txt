@@ -1,0 +1,9 @@
+flask
+APScheduler
+paho-mqtt
+pymongo
+firebase-admin
+numpy
+gpiozero
+adafruit-circuitpython-dht
+lgpio

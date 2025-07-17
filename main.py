@@ -11,6 +11,7 @@ import dataProcessing
 import cronService
 import json
 import time
+import os
 
 
 class SensorDataState:
@@ -25,7 +26,6 @@ def on_connect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     print(msg)
     try:
-        print(msg.topic)
         '''if msg.topic == "smart-heat/register-device":
             payload_str = msg.payload.decode('utf-8')
             data = json.loads(payload_str)
@@ -51,16 +51,20 @@ def on_message(client, userdata, msg):
             else:
                 print("Added token to db", data.get("token"))'''
 
-            print(msg.topic + " " + str(msg.payload))
+        print(msg.topic + " " + str(msg.payload))
     except Exception as e:
         print("Exception in on_message:", e)
 
 
 def main():
+    cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "/home/anejbv/certificates/smartheat-d8b87-firebase-adminsdk-fbsvc-0b545e50b8.json")
+    if not cred_path:
+        raise RuntimeError("Set GOOGLE_APPLICATION_CREDENTIALS env var with Firebase key path")
+
     global dbManager
 
     state = SensorDataState()
-    firebase = FirebaseManager("/home/anejbv/certificates/smartheat-d8b87-firebase-adminsdk-fbsvc-0b545e50b8.json")
+    firebase = FirebaseManager(cred_path)
     dbManager = MongoDBClient()
     scheduler = BackgroundScheduler()
     state.current_distance = 0
@@ -73,7 +77,9 @@ def main():
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message
-    mqttc.connect("192.168.1.148", 1883, 60)
+    broker = os.getenv("MQTT_BROKER", "localhost")
+    port = int(os.getenv("MQTT_PORT", 1883))
+    mqttc.connect(broker, port, 60)
     mqttc.loop_start()
 
     run = True
@@ -95,7 +101,7 @@ def main():
             dbManager.insert("room_humidity", {"value": humidity})
             dbManager.insert("distance", {"value": distance})
 
-            time.sleep(5)
+            time.sleep(60)
 
         except Exception:
             print("Error occurred with reading data")
