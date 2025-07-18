@@ -23,9 +23,11 @@ services:
     privileged: true
     user: root
     devices:
-      - /dev/gpiomem
-      - /dev/gpiochip0:/dev/gpiochip0  # Required for lgpio
-      - /dev/i2c-1:/dev/i2c-1 
+      - /dev/gpiomem:/dev/gpiomem
+      - /dev/gpiomem4:/dev/gpiomem4
+      - /dev/gpiochip4:/dev/gpiochip4 
+      - /dev/gpiochip0:/dev/gpiochip0
+      - /dev/i2c-1:/dev/i2c-1
     depends_on:
       - mongo
       - mosquitto
