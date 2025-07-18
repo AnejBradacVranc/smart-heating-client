@@ -9,12 +9,9 @@ services:
     privileged: true
     depends_on:
       - mongo
-      - mosquitto
     environment:
       - MONGO_URI=mongodb://mongo:27017/smartHome
       - MONGO_DB_NAME=smartHome
-      - MQTT_BROKER=mosquitto
-      - MQTT_PORT=1883
     volumes:
       - .:/app
     networks:
@@ -24,19 +21,23 @@ services:
     build: .
     command: python main.py
     privileged: true
+    user: root
     devices:
-      - /dev/gpiomem:/dev/gpiomem
-      - /dev/i2c-1:/dev/i2c-1
+      - /dev/gpiomem
+      - /dev/gpiochip0:/dev/gpiochip0  # Required for lgpio
+      - /dev/i2c-1:/dev/i2c-1 
     depends_on:
       - mongo
       - mosquitto
     environment:
-      - GPIOZERO_PIN_FACTORY=RPiGPIO
+      - GPIOZERO_PIN_FACTORY=lgpio
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/firebase-key.json
       - MONGO_URI=mongodb://mongo:27017/smartHome
       - MONGO_DB_NAME=smartHome
       - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
     volumes:
+      - /proc/device-tree:/proc/device-tree:ro
       - /sys:/sys
       - .:/app
       - /home/anejbv/certificates/smartheat-d8b87-firebase-adminsdk-fbsvc-0b545e50b8.json:/secrets/firebase-key.json:ro

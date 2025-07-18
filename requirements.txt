@@ -7,4 +7,3 @@ numpy
 gpiozero
 adafruit-circuitpython-dht
 lgpio
-RPi.GPIO
