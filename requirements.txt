@@ -4,7 +4,6 @@ paho-mqtt
 pymongo
 firebase-admin
 numpy
-gpiozero
 adafruit-circuitpython-dht
-lgpio
-RPi.GPIO
+gpiozero
+rpi.lgpio

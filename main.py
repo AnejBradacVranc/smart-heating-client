@@ -20,40 +20,25 @@ class SensorDataState:
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
-    client.subscribe("smart-heat/register-device", qos=2)
+    try:
+        furnaceTemp = tempSensor.read_temp()
+        humidity = humiditySensor.read_humidity()
+        roomTemp = humiditySensor.read_temp()
+        distance = distanceSensor.read_distance()
+
+        client.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=False)
+        client.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=False)
+        client.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=False)
+        client.publish("smart-heat/distance", payload=distance, qos=1, retain=False)
+
+        print("Initial sensor data published on connect")
+
+    except Exception as e:
+        print("Exception in on_connect sensor push:", e)
 
 
 def on_message(client, userdata, msg):
-    print(msg)
-    try:
-        '''if msg.topic == "smart-heat/register-device":
-            payload_str = msg.payload.decode('utf-8')
-            data = json.loads(payload_str)
-
-            settings_update_resp = dbManager.update_one(
-                "settings",
-                {"fuel_critical_point": data.get("fuelCriticalPoint")},
-                filter_query=None,
-                upsert=True
-            )
-            if settings_update_resp is None:
-                print("ERROR: Could not save fuel critical level to db")
-            else:
-                print("Added critical fuel level to db", data.get("fuelCriticalPoint"))
-
-            device_update_resp = dbManager.update(
-                "devices",
-                {"token": data.get("token")},
-                {"token": data.get("token"), "timestamp": data.get("timestamp")}
-            )
-            if device_update_resp is None:
-                print("ERROR: Could not save device token to db")
-            else:
-                print("Added token to db", data.get("token"))'''
-
-        print(msg.topic + " " + str(msg.payload))
-    except Exception as e:
-        print("Exception in on_message:", e)
+    print(msg.topic + " " + str(msg.payload))
 
 
 def main():
@@ -81,6 +66,9 @@ def main():
     port = int(os.getenv("MQTT_PORT", 1883))
     mqttc.connect(broker, port, 60)
     mqttc.loop_start()
+    
+    print("Broker running on address:", broker)
+    print("and port", port)
 
     run = True
     while run:

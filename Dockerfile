@@ -1,17 +1,27 @@
-FROM arm64v8/python:3.10
+FROM debian:bookworm
 
+# Set working directory
 WORKDIR /app
 
+# Copy your application code into the container
 COPY . .
 
+# Install OS-level dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    build-essential \
+    python3 \
+    python3-pip \
     python3-dev \
+    build-essential \
+    gcc \
     libffi-dev \
+    libgpiod-dev \
     libgpiod2 \
+    python3-libgpiod \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
+# Install Python dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt --break-system-packages
 
+# Expose a port if your app listens (adjust as needed)
 EXPOSE 8000
+
