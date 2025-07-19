@@ -26,6 +26,10 @@ services:
       - mongo
       - mosquitto
     environment:
+      - DHT_PIN=12
+      - DIST_ECHO=24
+      - DIST_TRIGGER=23
+      - PYTHONUNBUFFERED=1
       - GPIOZERO_PIN_FACTORY=lgpio
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/firebase-key.json
       - MONGO_URI=mongodb://mongo:27017/smartHome

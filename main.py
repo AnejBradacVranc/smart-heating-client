@@ -20,21 +20,6 @@ class SensorDataState:
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
-    try:
-        furnaceTemp = tempSensor.read_temp()
-        humidity = humiditySensor.read_humidity()
-        roomTemp = humiditySensor.read_temp()
-        distance = distanceSensor.read_distance()
-
-        client.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=False)
-        client.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=False)
-        client.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=False)
-        client.publish("smart-heat/distance", payload=distance, qos=1, retain=False)
-
-        print("Initial sensor data published on connect")
-
-    except Exception as e:
-        print("Exception in on_connect sensor push:", e)
 
 
 def on_message(client, userdata, msg):
@@ -66,6 +51,7 @@ def main():
     port = int(os.getenv("MQTT_PORT", 1883))
     mqttc.connect(broker, port, 60)
     mqttc.loop_start()
+    last_insert = time.time()
     
     print("Broker running on address:", broker)
     print("and port", port)
@@ -79,17 +65,20 @@ def main():
             distance = distanceSensor.read_distance()
             state.current_distance = distance
 
-            mqttc.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=False)
-            mqttc.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=False)
-            mqttc.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=False)
-            mqttc.publish("smart-heat/distance", payload=distance, qos=1, retain=False)
+            mqttc.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=True)
+            mqttc.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=True)
+            mqttc.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=True)
+            mqttc.publish("smart-heat/distance", payload=distance, qos=1, retain=True)
+            
+            if time.time() - last_insert > 60:
+                print("Logging values to db")
+                dbManager.insert("furnace_temp", {"value": furnaceTemp})
+                dbManager.insert("room_temp", {"value": roomTemp})
+                dbManager.insert("room_humidity", {"value": humidity})
+                dbManager.insert("distance", {"value": distance})
+                last_insert = time.time()
 
-            dbManager.insert("furnace_temp", {"value": furnaceTemp})
-            dbManager.insert("room_temp", {"value": roomTemp})
-            dbManager.insert("room_humidity", {"value": humidity})
-            dbManager.insert("distance", {"value": distance})
-
-            time.sleep(60)
+            time.sleep(5)
 
         except Exception:
             print("Error occurred with reading data")
