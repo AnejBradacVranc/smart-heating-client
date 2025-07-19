@@ -39,7 +39,7 @@ def main():
     scheduler = BackgroundScheduler()
     state.current_distance = 0
 
-    scheduler.add_job(cronService.notify_users, 'interval', [dbManager, firebase, state], minutes=10)
+    scheduler.add_job(cronService.notify_users, 'interval', [dbManager, firebase, state], minutes=1)
     print("Starting cron service")
     scheduler.start()
 
@@ -64,21 +64,21 @@ def main():
             roomTemp = humiditySensor.read_temp()
             distance = distanceSensor.read_distance()
             state.current_distance = distance
+            
 
             mqttc.publish("smart-heat/furnace-temp", payload=furnaceTemp, qos=1, retain=True)
             mqttc.publish("smart-heat/room-temp", payload=roomTemp, qos=1, retain=True)
             mqttc.publish("smart-heat/room-humidity", payload=humidity, qos=1, retain=True)
             mqttc.publish("smart-heat/distance", payload=distance, qos=1, retain=True)
             
-            if time.time() - last_insert > 60:
-                print("Logging values to db")
+            if time.time() - last_insert > 10:
                 dbManager.insert("furnace_temp", {"value": furnaceTemp})
                 dbManager.insert("room_temp", {"value": roomTemp})
                 dbManager.insert("room_humidity", {"value": humidity})
                 dbManager.insert("distance", {"value": distance})
                 last_insert = time.time()
 
-            time.sleep(5)
+            time.sleep(2)
 
         except Exception:
             print("Error occurred with reading data")
